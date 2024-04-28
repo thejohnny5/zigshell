@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: zig-fmt --ast-check
+        name: Zig Formatter
+        entry: zig fmt
+        language: system
+        types: [zig]
+        files: \.zig$
