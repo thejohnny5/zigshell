@@ -7,8 +7,7 @@ const stdin_file = std.io.getStdIn().reader();
 var br = std.io.bufferedReader(stdin_file);
 var stdin = br.reader();
 
-fn tokenizeInitialInput(read_buffer: []u8) ![][]u8 {
-    var output: [40][]u8 = undefined;
+fn tokenizeInitialInput(read_buffer: []u8, token_buffer: [][]u8) ![][]u8 {
     var current: usize = 0;
     while (try stdin.readUntilDelimiterOrEof(read_buffer, '\n')) |line| {
         if (line.len == read_buffer.len) {
@@ -18,30 +17,32 @@ fn tokenizeInitialInput(read_buffer: []u8) ![][]u8 {
         var start: usize = 0;
         for (line, 0..) |char, index| {
             if (char == ' ' and index - start > 0) {
-                output[current] = line[start..index];
-                start = index;
+                token_buffer[current] = line[start..index];
+                start = index + 1;
                 current += 1;
             }
         } else {
             if (start != ' ') {
-                output[current] = line[start..];
+                token_buffer[current] = line[start..];
                 start = line.len;
                 current += 1;
             }
         }
         break;
     }
-    return &output;
+    return token_buffer[0..current];
 }
 
 pub fn main() !void {
     while (true) {
         // Print link for command
-        try stdout.print("zigshell> ", .{});
+        try stdout.print("→  ", .{});
         try stdout_flush();
         var read_buffer: [4096]u8 = undefined;
-        const tokens = try tokenizeInitialInput(&read_buffer);
-        const status = execute_commands(tokens[0], tokens[1..]);
+        var token_buffer: [40][]u8 = undefined;
+        const tokens = try tokenizeInitialInput(&read_buffer, &token_buffer);
+        const args = if (tokens.len <= 1) null else tokens[1..];
+        const status = execute_commands(tokens[0], args);
         switch (status) {
             ExecutionStatus.Success => {
                 try stdout.print("\n", .{});

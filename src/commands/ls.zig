@@ -3,7 +3,7 @@ const ExecutionStatus = @import("../common.zig").ExecutionStatus;
 const stdout = @import("../common.zig").stdout;
 const stdout_flush = @import("../common.zig").stdout_flush;
 const stdout_write = @import("../common.zig").bw_write;
-pub fn ls(args: [][]u8) ExecutionStatus {
+pub fn ls(args: ?[][]u8) ExecutionStatus {
     _ = args;
     const dir = std.fs.cwd().openDir("./", .{ .iterate = true }) catch return ExecutionStatus.ArgumentError;
 
