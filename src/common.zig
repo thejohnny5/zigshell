@@ -1,5 +1,5 @@
 const std = @import("std");
-pub const ExecutionStatus = union(enum) { RuntimeError, ParsingError, Success, Exit, CommandNotFound, ArgumentError };
+pub const ExecutionStatus = union(enum) { RuntimeError, ParsingError, Success, Exit, CommandNotFound, ArgumentError, CannotFork, ChildProcessError };
 
 const stdout_file = std.io.getStdOut().writer();
 var bw = std.io.bufferedWriter(stdout_file);

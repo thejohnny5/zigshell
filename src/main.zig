@@ -39,7 +39,7 @@ pub fn main() !void {
         try stdout.print("→  ", .{});
         try stdout_flush();
         var read_buffer: [4096]u8 = undefined;
-        var token_buffer: [40][]u8 = undefined;
+        var token_buffer: [40][:0]u8 = undefined;
         const tokens = try tokenizeInitialInput(&read_buffer, &token_buffer);
         const args = if (tokens.len <= 1) null else tokens[1..];
         const status = execute_commands(tokens[0], args);
@@ -57,5 +57,4 @@ pub fn main() !void {
         }
         try stdout_flush();
     }
-    //try ls();
 }
