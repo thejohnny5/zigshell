@@ -7,42 +7,41 @@ const pid_t = std.posix.pid_t;
 const fork = std.posix.fork;
 const waitpid = std.posix.waitpid;
 const execvpeZ = std.posix.execvpeZ;
-fn exit(args: ?[][]u8) ExecutionStatus {
+fn exit(args: [*:null]const ?[*:0]const u8) ExecutionStatus {
     _ = args;
+    std.debug.print("Hit\n", .{});
     return ExecutionStatus.Exit;
 }
 
 fn launchProcess(command: [*:0]const u8, args: [*:null]const ?[*:0]const u8) ExecutionStatus {
     const pid: pid_t = fork() catch return ExecutionStatus.CannotFork;
-    if (pid == 0) {
+    if (pid == @as(pid_t, 0)) {
         const env = [_:null]?[*:0]u8{null};
-        const status = execvpeZ(command, args, &env);
-        _ = status;
-        // We are the child, execute the command.
-
+        const err_res = execvpeZ(command, args, &env);
+        std.debug.print("ERROR: {}\n", .{err_res});
+        std.posix.exit(0);
     } else {
         const result = waitpid(pid, 0);
-        if (result != 0) {
-            ExecutionStatus.ChildProcessError;
-        }
+        _ = result;
+        return ExecutionStatus.Success;
     }
 }
 
-pub fn execute_commands(command: []u8, args: ?[][]u8) ExecutionStatus {
-    if (std.mem.eql(u8, command, "exit")) {
+pub fn execute_commands(command: [*:0]u8, args: [*:null]const ?[*:0]const u8) ExecutionStatus {
+    const len = std.mem.len(command);
+    const cmd = command[0..len];
+    if (std.mem.eql(u8, cmd, "exit")) {
         return exit(args);
     }
-    if (std.mem.eql(u8, command, "ls")) {
-        return ls(args);
-    }
-    if (std.mem.eql(u8, command, "pwd")) {
-        return pwd(args);
-    }
-    if (std.mem.eql(u8, command, "cd")) {
+    //if (std.mem.eql(u8, command, "ls")) {
+    //    return ls(args);
+    //}
+    //if (std.mem.eql(u8, command, "pwd")) {
+    //    return pwd(args);
+    //}
+    if (std.mem.eql(u8, cmd, "cd")) {
         return chdir(args);
     }
-    var cmd: [*:0]u8 = command.ptr;
-    cmd[command.len] = 0;
 
     return launchProcess(command, args);
 }
