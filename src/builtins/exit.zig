@@ -1,6 +1,6 @@
-const ExecutionStatus = @import("../common.zig").ExecutionStatus;
+const ExecutionInfo = @import("../common.zig").ExecutionInfo;
 
-pub fn exit(args: [*:null]const ?[*:0]const u8) ExecutionStatus {
+pub fn exit(args: [*:null]const ?[*:0]const u8) ExecutionInfo {
     _ = args;
-    return ExecutionStatus.Exit;
+    return ExecutionInfo{ .execution_status = .Exit, .msg = "" };
 }

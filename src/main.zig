@@ -52,18 +52,19 @@ pub fn main() !void {
         const command = tokens[0];
         if (command) |cmd| {
             const status = execute_commands(cmd, args);
-            //std.debug.print("Execution Status: {}\n", .{status});
-            switch (status) {
-                ExecutionStatus.Exit => {
+            switch (status.execution_status) {
+                .Exit => {
                     return;
                 },
-                ExecutionStatus.Success => {
-                    //try stdout.print("\n", .{});
+                .Success => {},
+                .CommandNotFound => {
+                    try stdout.print("zshell: err: command not found\n", .{});
                 },
-                ExecutionStatus.CommandNotFound => {
-                    try stdout.print("Err: Command Not Found\n", .{});
+                else => {
+                    if (status.display) {
+                        try stdout.print("zshell: {s}\n", .{status.msg});
+                    }
                 },
-                else => {},
             }
         } else {
             continue;

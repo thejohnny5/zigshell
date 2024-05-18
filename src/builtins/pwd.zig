@@ -1,17 +1,17 @@
 const std = @import("std");
-const ExecutionStatus = @import("../common.zig").ExecutionStatus;
+const ExecutionInfo = @import("../common.zig").ExecutionInfo;
 const stdout = @import("../common.zig").stdout;
 const stdout_flush = @import("../common.zig").stdout_flush;
 const stdout_write = @import("../common.zig").bw_write;
-pub fn pwd(args: [*:null]const ?[*:0]const u8) ExecutionStatus {
+pub fn pwd(args: [*:null]const ?[*:0]const u8) ExecutionInfo {
     _ = args;
     var buffer: [1024]u8 = undefined;
-    const dir = std.fs.cwd().realpath(".", &buffer) catch return ExecutionStatus.RuntimeError;
-    const size = stdout.write(dir) catch return ExecutionStatus.RuntimeError;
-    const s2 = stdout.write("\n") catch return ExecutionStatus.RuntimeError;
+    const dir = std.fs.cwd().realpath(".", &buffer) catch return ExecutionInfo{ .execution_status = .RuntimeError, .msg = "pwd: could not get path", .display = true };
+    const size = stdout.write(dir) catch return ExecutionInfo{ .execution_status = .RuntimeError, .msg = "pwd: could not write", .display = true };
+    const s2 = stdout.write("\n") catch return ExecutionInfo{ .execution_status = .RuntimeError, .msg = "pwd: could not write", .display = true };
     _ = size;
     _ = s2;
 
-    stdout_flush() catch return ExecutionStatus.RuntimeError;
-    return ExecutionStatus.Success;
+    stdout_flush() catch return ExecutionInfo{ .execution_status = .RuntimeError, .msg = "pwd: could not flush", .display = true };
+    return ExecutionInfo{ .execution_status = .Success, .msg = "" };
 }
