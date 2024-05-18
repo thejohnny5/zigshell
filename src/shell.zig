@@ -7,11 +7,7 @@ const pid_t = std.posix.pid_t;
 const fork = std.posix.fork;
 const waitpid = std.posix.waitpid;
 const execvpeZ = std.posix.execvpeZ;
-fn exit(args: [*:null]const ?[*:0]const u8) ExecutionStatus {
-    _ = args;
-    std.debug.print("Hit\n", .{});
-    return ExecutionStatus.Exit;
-}
+const exit = @import("builtins/exit.zig");
 
 fn launchProcess(command: [*:0]const u8, args: [*:null]const ?[*:0]const u8) ExecutionStatus {
     const pid: pid_t = fork() catch return ExecutionStatus.CannotFork;
@@ -36,9 +32,9 @@ pub fn execute_commands(command: [*:0]u8, args: [*:null]const ?[*:0]const u8) Ex
     //if (std.mem.eql(u8, command, "ls")) {
     //    return ls(args);
     //}
-    //if (std.mem.eql(u8, command, "pwd")) {
-    //    return pwd(args);
-    //}
+    if (std.mem.eql(u8, cmd, "pwd")) {
+        return pwd(args);
+    }
     if (std.mem.eql(u8, cmd, "cd")) {
         return chdir(args);
     }

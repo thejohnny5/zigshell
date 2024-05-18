@@ -11,12 +11,7 @@ pub fn chdir(args: [*:null]const ?[*:0]const u8) ExecutionStatus {
     if (args[1]) |path| {
         const strlen = std.mem.len(path);
         const zstr = path[0..strlen];
-        const dir = std.fs.cwd().openDir(zstr, .{}) catch |err| {
-            std.debug.print("Error: {any}\n", .{err});
-            return ExecutionStatus.RuntimeError;
-        };
-        std.debug.print("Arg: {any}\n", .{zstr});
-        std.debug.print("Dir struct: {any}\n", .{dir});
+        const dir = std.fs.cwd().openDir(zstr, .{}) catch return ExecutionStatus.RuntimeError;
         dir.setAsCwd() catch return ExecutionStatus.RuntimeError;
         return ExecutionStatus.Success;
     }

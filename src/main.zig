@@ -52,7 +52,7 @@ pub fn main() !void {
         const command = tokens[0];
         if (command) |cmd| {
             const status = execute_commands(cmd, args);
-            std.debug.print("Execution Status: {}\n", .{status});
+            //std.debug.print("Execution Status: {}\n", .{status});
             switch (status) {
                 ExecutionStatus.Exit => {
                     return;
