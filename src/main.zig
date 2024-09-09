@@ -1,74 +1,71 @@
 const std = @import("std");
 const stdout = @import("common.zig").stdout;
 const stdout_flush = @import("common.zig").stdout_flush;
-const execute_commands = @import("shell.zig").execute_commands;
+const executeCommands = @import("shell.zig").executeCommands;
 const ExecutionStatus = @import("common.zig").ExecutionStatus;
 const stdin_file = std.io.getStdIn().reader();
-var br = std.io.bufferedReader(stdin_file);
-var stdin = br.reader();
 
+const Ansi = @import("common.zig").Ansi;
+
+const stderr_file = std.io.getStdErr();
+const stderr = stderr_file.writer();
+const ArgIteratorGeneralOptions = std.process.ArgIteratorGeneralOptions;
+const ArgIteratorGeneral = std.process.ArgIteratorGeneral;
+const Parser = @import("Parser.zig");
+
+/// TODO:
+/// Look into argParser from std.process: https://github.com/ziglang/zig/blob/master/lib/std/process.zig
 /// Tokenizes the input by using the read buffer to hold stdin. If the stdin input
 /// exceeds the read buffer, there is an error.
-fn tokenizeInitialInput(read_buffer: [:0]u8, token_buffer: []?[*:0]u8) ![]?[*:0]u8 {
-    var current: usize = 0;
-    while (try stdin.readUntilDelimiterOrEof(read_buffer, '\n')) |line| {
-        if (line.len == read_buffer.len) {
-            // should error
-        }
-
-        var start: usize = 0;
-        for (line, 0..) |char, index| {
-            if (char == ' ' and index - start > 0) {
-                read_buffer[index] = 0;
-                const curr_line: [:0]u8 = line[start..index :0];
-                token_buffer[current] = curr_line.ptr;
-                start = index + 1;
-                current += 1;
-            }
-        } else {
-            if (start < line.len and line[start] != ' ') {
-                read_buffer[line.len] = 0;
-                const curr_line: [:0]u8 = read_buffer[start..line.len :0];
-                token_buffer[current] = curr_line.ptr;
-                start = line.len;
-                current += 1;
-            }
-        }
-        break;
-    }
-    token_buffer[current] = null;
-    return token_buffer[0 .. current + 1];
-}
-
 pub fn main() !void {
+    var buffer: [8192]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
+    var parser = try Parser.init(allocator);
+    var read_buffer: [4096:0]u8 = undefined;
+    var command_buffer: [32]?[*:0]u8 = [_]?[*:0]u8{null} ** 32;
     while (true) {
         // Print link for command
-        try stdout.print("→  ", .{});
+        try stdout.print("{s}→{s}  ", .{ Ansi.Cyan, Ansi.White });
         try stdout_flush();
-        var read_buffer: [4096:0]u8 = undefined;
-        var token_buffer: [40]?[*:0]u8 = undefined;
-        const tokens = try tokenizeInitialInput(&read_buffer, &token_buffer);
-        const args: [*:null]?[*:0]u8 = tokens[0 .. tokens.len - 1 :null].ptr;
-        const command = tokens[0];
-        if (command) |cmd| {
-            const status = execute_commands(cmd, args);
-            switch (status.execution_status) {
-                .Exit => {
-                    return;
-                },
-                .Success => {},
-                .CommandNotFound => {
-                    try stdout.print("zshell: err: command not found\n", .{});
-                },
-                else => {
-                    if (status.display) {
-                        try stdout.print("zshell: {s}\n", .{status.msg});
-                    }
-                },
-            }
-        } else {
-            continue;
+
+        try parser.tokenizeInitialInput(&read_buffer);
+        const command = if (parser.getCommand()) |cmd| cmd else continue;
+        const args = parser.getArgs(&command_buffer);
+        const status = executeCommands(command, args);
+        switch (status.execution_status) {
+            .Exit => {
+                return;
+            },
+            .Success => {},
+            .CommandNotFound => {
+                try stderr.print("zshell: err: command not found\n", .{});
+            },
+            else => {
+                if (status.display) {
+                    try stdout.print("zshell: {s}\n", .{status.msg});
+                }
+            },
         }
+
         try stdout_flush();
+        parser.free();
     }
+}
+
+//fn parseArgs() void {
+//    const ArgParser = ArgIteratorGeneral(.{});
+//    var arg_parser = ArgParser.init
+//}
+//
+
+/// To split this up into a series of commands that can be changed into pipes
+/// So for cat file.txt | head
+///     ["cat", "file.txt", "|", "head"]
+///     [["cat", "file.txt"], ["head"]]
+fn split_pipe(token_buffer: [*:null]?[*:0]u8) [][*:null]?[*:0]u8 {
+    // Iterate through token_buffer
+    // If pipe character only, take indicate the slice, otherwise reutrn the total slice
+    _ = token_buffer;
+    return .{};
 }
